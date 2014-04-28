@@ -359,9 +359,3 @@ def launch_test_with_agent(name,main_class){
         classpath = files("testing/target/jooflux-testing-" + JOOFLUX_VERSION + ".jar")
     }
 }
-
-def runJRuby(cmdArg) {
-    Thread.currentThread().setContextClassLoader(JRuby.class.classLoader)
-    println "Running JRuby: $cmdArg"
-    JRuby.main("-S $cmdArg".split())
-}
