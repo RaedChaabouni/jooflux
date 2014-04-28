@@ -1,0 +1,367 @@
+/* ..................................................................................... #
+#
+# JooFlux
+#
+# Copyright (c) 2012 Institut National des Sciences Appliquées de Lyon (INSA-Lyon)
+# Copyright (c) 2012 Julien Ponge, INSA-Lyon
+# Copyright (c) 2012 Frédéric Le Mouël, INSA-Lyon
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# ..................................................................................... #
+# General definitions
+# ..................................................................................... */
+
+apply plugin: 'java'
+apply plugin: 'maven'
+apply plugin: 'groovy'
+sourceCompatibility = 1.7
+version = '1.0'
+
+ext{
+    JOOFLUX_VERSION = 'r2-SNAPSHOT'
+    ASM_LIB = 'lib/asm-all-4.0.jar'
+    TINYLOG_LIB = 'lib/tinylog.jar'
+
+    SCIMARK_URL = 'http://math.nist.gov/scimark2/scimark2lib.jar'
+    CLOJURE_URL = 'http://repo1.maven.org/maven2/org/clojure/clojure/1.4.0/clojure-1.4.0.jar'
+    DACAPO_URL = 'http://heanet.dl.sourceforge.net/project/dacapobench/9.12-bach/dacapo-9.12-bach.jar'
+}
+
+/* ..................................................................................... #
+# JooFlux
+# ..................................................................................... */
+
+
+repositories {
+    mavenLocal() 
+    maven {
+        url "http://mirrors.ibiblio.org/maven2/"
+    }
+}
+
+jar{
+    
+	manifest{
+	    	        
+        attributes( 
+            "Specification-Title"   : 'Jooflux',
+            "Specification-Version" : JOOFLUX_VERSION,
+            "Specification-Vendor"  : "INSA-Lyon",
+ 		    "Implementation-Title"  :"JooFlux",
+ 		    "Implementation-Version": JOOFLUX_VERSION,
+            "Implementation-Vendor" : "INSA-Lyon",
+            "Copyright"             : 'Copyright (c) 2012 INSA-Lyon',
+ 		    "License"               : 'Mozilla Public License Version 2.0', 
+ 		    "License-URL"           : 'http://www.mozilla.org/MPL/2.0/',
+            "Premain-Class"         : 'fr.insalyon.telecom.jooflux.InvokeInterceptorAgent',
+            "Can-Redefine-Classes"  : 'false',
+            "Can-Retransform-Classes"       : 'false', 
+            "Can-Set-Native-Method-Prefix"  : 'false'
+        )
+        
+	}
+	
+	doFirst {
+	    
+	    from ASM_LIB + '/META-INF/' exclude 'MANIFEST.MF'
+	    from "$TINYLOG_LIB/META-INF/" exclude 'MANIFEST.MF'
+	    
+	    from (configurations.runtime.resolve().collect { it.isDirectory() ? it : zipTree(it) }) {
+	        exclude 'META-INF/MANIFEST.MF'
+	    }
+	
+	}
+}
+
+sourceSets{
+    main{
+        java{
+            srcDir 'fr/insalyon/telecom/jooflux/'
+        }
+    }
+    test{
+        java{
+            srcDir 'fr/insalyon/telecom/jooflux/internal'
+        }
+    }
+}
+
+dependencies{
+    compile 'org.codehaus.groovy:groovy-all:2.2.0'
+    testCompile 'junit:junit:[4,)'
+    compile files(ASM_LIB)    
+    compile files(TINYLOG_LIB)
+}
+
+//add external Tests
+sourceSets {
+    testing
+}
+    
+dependencies {
+    testingCompile 'junit:junit:4.11'
+    testingRuntime 'org.ow2.asm:asm-all:4.0'
+}
+
+/*.....................................................................................*/
+/* Tests                                                                               */
+/*.....................................................................................*/             
+
+task testingJar(type: Jar) { 
+    //include '../testing/'
+}
+            
+                                
+task ALL_TESTS (dependsOn:
+                ['test_helloworld',
+                'test_classloading',
+                'test_fibonacci',
+                'test_reflective_fibonacci',
+                'test_fibonacci_aspectj',
+                'test_fibonacci_jruby',
+                'test_reflective_fibonacci_jruby',
+                'test_fibonacci_groovy',
+                'test_reflective_fibonacci_groovy',
+                'test_fibonacci_clojure',
+                'test_fibonacci_jython',
+                'test_fibonacci_javascript',
+                'test_forkjoin',
+                'test_scimark2',
+                'test_scimark2_large']) << {
+}
+ 
+ext{                              
+    JOOFLUX_LOGGING = ''
+    LOGGING_FLAG = "-verbose:class $JOOFLUX_LOGGING"
+    SCIMARK2_LIB = 'lib/scimark2lib.jar'
+    CLOJURE = 'lib/clojure-1.4.0.jar'
+}
+
+//Don't work scimark2lib.jar missing
+task test_scimark2 << {
+
+    println "SciMark 2.0"
+    javaexec{
+        jvmArgs '-noverify', '-cp'
+        main = 'jnt.scimark2.commandline'
+        classpath = files(SCIMARK2_LIB)
+    }
+
+    println "SciMark 2.0 with JooFlux agent"
+    javaexec{
+        jvmArgs '-noverify', LOGGING_FLAG, "javaagent:target/jooflux-${JOOFLUX_VERSION}.jar"
+        main = 'jnt.scimark2.commandline'
+        classpath = files("${ASM_LIB}:${SCIMARK2_LIB}")
+    }
+}
+
+
+//Don't work scimark2lib.jar missing
+
+task test_scimark2_large << {
+
+    println "SciMark 2.0 Large"
+    javaexec{
+        jvmArgs '-noverify', '-cp'
+        main = 'jnt.scimark2.commandline'
+        classpath = files(SCIMARK2_LIB)
+        args '-large'
+    }
+
+    println "SciMark 2.0 Large with JooFlux agent"
+    javaexec{
+        jvmArgs '-noverify', '${LOGGING_FLAG}', '-javaagent:target/jooflux-${JOOFLUX_VERSION}.jar', '-cp'
+        main = 'jnt.scimark2.commandline'
+        classpath = files(SCIMARK2_LIB)
+        args '-large'
+    }
+}
+
+
+//dacapo-9.12-bach.jar missing
+task test_dacapo << {
+
+    println "Dacapo"
+    exec {
+        commandLine "java", "-noverify", "-jar", "${DACAPO_LIB}", "-C", "luindex"
+        commandLine "java", "-noverify", "-jar", "${DACAPO_LIB}", "-C", "lusearch"
+        commandLine "java", "-noverify", "-jar", "${DACAPO_LIB}", "-C", "sunflow"
+        commandLine "java", "-noverify", "-jar", "${DACAPO_LIB}", "-C", "avrora"
+    }
+
+    println "Dacapo with JooFlux agent"
+    exec {
+        commandLine "java", "-noverify", "-Dtinylog.level=ERROR", "-javaagent:target/jooflux-${JOOFLUX_VERSION}.jar", "-cp", "${ASM_LIB}", "-jar", "${DACAPO_LIB}", "-C", "luindex"
+        commandLine "java", "-noverify", "-Dtinylog.level=ERROR", "-javaagent:target/jooflux-${JOOFLUX_VERSION}.jar", "-cp", "${ASM_LIB}", "-jar", "${DACAPO_LIB}", "-C", "lusearch"
+        commandLine "java", "-noverify", "-Dtinylog.level=ERROR", "-javaagent:target/jooflux-${JOOFLUX_VERSION}.jar", "-cp", "${ASM_LIB}", "-jar", "${DACAPO_LIB}", "-C", "sunflow"
+        commandLine "java", "-noverify", "-Dtinylog.level=ERROR", "-javaagent:target/jooflux-${JOOFLUX_VERSION}.jar", "-cp", "${ASM_LIB}", "-jar", "${DACAPO_LIB}", "-C", "avrora"
+    }
+}
+
+
+
+task test_forkjoin << {
+    println "\n** ForkJoin Tests Requirements **"
+    println "   Set HOTSPOT_PATH to point to the OpenJDK hotspot module."
+    println "   Default is `../jdk7/macosx-port/hotspot`"
+    jdk_hotspot_path = {"$System.env.HOTSPOT_PATH" != null ? "$System.env.HOTSPOT_PATH" : '../jdk7/macosx-port/hotspot' }
+    println "   Current is `#{jdk_hotspot_path}`"
+    /*args = [
+            jdk_hotspot_path,
+            'List',
+            '10',
+            '-Xmx2048M -Xms512M'
+    ]
+    launch_test('ForkJoin', 'fr.insalyon.telecom.joofluxtest.forkjoin.WordCounter', args)
+    launch_test_with_agent('ForkJoin', 'fr.insalyon.telecom.joofluxtest.forkjoin.WordCounter', args)
+    */
+}
+
+
+task test_reflective_fibonacci << {
+    launch_test('Reflective Fibonacci', 'fr.insalyon.telecom.joofluxtest.reflection.ReflectiveFibonacci')
+    launch_test_with_agent('Reflective Fibonacci', 'fr.insalyon.telecom.joofluxtest.reflection.ReflectiveFibonacci')
+}
+
+task test_classloading << {
+    launch_test('Class.forName Loading', 'fr.insalyon.telecom.joofluxtest.classloading.TestClassLoading')
+    launch_test_with_agent('Class.forName Loading', 'fr.insalyon.telecom.joofluxtest.classloading.TestClassLoading')
+}
+
+task test_helloworld << {
+    launch_test('HelloWorld', 'fr.insalyon.telecom.joofluxtest.helloworld.TestHelloWorld')
+    launch_test_with_agent('HelloWorld', 'fr.insalyon.telecom.joofluxtest.helloworld.TestHelloWorld')
+}
+
+task test_fibonacci << {
+    launch_test('Fibonacci', 'fr.insalyon.telecom.joofluxtest.fibonacci.TestRecursive')
+    launch_test_with_agent('Fibonacci', 'fr.insalyon.telecom.joofluxtest.fibonacci.TestRecursive')
+}
+
+task test_counterloop << {
+    launch_test_with_agent('Counter loop', 'fr.insalyon.telecom.joofluxtest.counterloop.CounterLoop')
+}
+
+task test_selfswitcher << {
+    launch_test_with_agent('Self switcher', 'fr.insalyon.telecom.joofluxtest.self.switcher.Main')
+}
+
+task test_guiswitcher << {
+    launch_test_with_agent('GUI switcher', 'fr.insalyon.telecom.joofluxtest.gui.switcher.MyGUI')
+}
+
+task test_fibonacci_aspectj << {
+    println "Fibonacci intercepted by AspecJ (before)"
+    exec{
+        commandLine "ajc", "-cp", "${ASPECTJ_HOME}/lib/aspectjrt.jar:testing/aopplats", "testing/aopplats/FiboForAspectJ.java", "testing/aopplats/BTracer.aj"
+        commandLine "aj", "-cp", "${ASPECTJ_HOME}/lib/aspectjweaver.jar:testing/aopplats FiboForAspectJ"
+    }
+
+    println "Fibonacci intercepted by AspecJ (after)"
+    exec{
+        commandLine "ajc", "-cp" "${ASPECTJ_HOME}/lib/aspectjrt.jar:testing/aopplats", "testing/aopplats/FiboForAspectJ.java", "testing/aopplats/ATracer.aj"
+        commandLine "aj", "-cp", "${ASPECTJ_HOME}/lib/aspectjweaver.jar:testing/aopplats FiboForAspectJ"
+    }
+
+    println "Fibonacci intercepted by AspecJ (before+after)"
+    exec {
+        commandLine "ajc", "-cp", "$#{ASPECTJ_HOME}/lib/aspectjrt.jar:testing/aopplats", "testing/aopplats/FiboForAspectJ.java", "testing/aopplats/ABTracer.aj"
+        commandLine "aj", "-cp", "${ASPECTJ_HOME}/lib/aspectjweaver.jar:testing/aopplats", "FiboForAspectJ"
+    }
+}
+
+
+task test_fibonacci_clojure << {
+    println "Fibonacci on Clojure"
+    javaexec{
+        jvmArgs '-jar', "${CLOJURE}"
+        classpath = files("testing/dynlangs/fibo.clj")
+    }
+
+    println "Fibonacci on Clojure instrumented by JooFlux"
+    javaexec{
+        jvmArgs "-noverify", "${LOGGING_FLAG}", "-javaagent:target/jooflux-${JOOFLUX_VERSION}.jar", "-Dtinylog.level=WARNING", "-Xbootclasspath/a:${CLOJURE}:target/jooflux-${JOOFLUX_VERSION}.jar"
+        main = "clojure.main"
+        classpath = files("testing/dynlangs/fibo.clj")
+    }
+}
+
+task test_fibonacci_jython << {
+    println "Fibonacci on Jython"
+    exec{
+        commandLine "jython", "testing/dynlangs/fibo.py"
+    }
+}
+
+task test_fibonacci_jruby << {
+    println "Fibonacci on JRuby"
+    exec{
+        commandLine "jruby", "testing/dynlangs/fibo.rb"
+    }
+}
+
+task test_reflective_fibonacci_jruby << {
+    println "Reflective Fibonacci on JRuby"
+    exec{
+        commandLine "jruby", "testing/dynlangs/fibo-reflective.rb"
+    }
+}
+
+task test_fibonacci_groovy << {
+    println "Fibonacci on Groovy"
+    exec{
+        commandLine "groovy", "testing/dynlangs/fibo.groovy"
+    }
+}
+
+task test_reflective_fibonacci_groovy << {
+    println "Reflective Fibonacci on Groovy"
+    exec{
+        commandLine "groovy", "testing/dynlangs/fibo-reflective.groovy"
+    }
+}
+
+task test_fibonacci_javascript << {
+    println "Fibonaci on Javascript"
+    //sh "node testing/dynlangs/fibo.js"
+}
+
+task test_clj << {
+    println "Clojure instrumented by JooFlux"
+    javaexec{
+        jvmArgs "-noverify", "${LOGGING_FLAG}", "-javaagent:target/jooflux-${JOOFLUX_VERSION}.jar",  "-Dtinylog.level=WARNING", "-Xbootclasspath/a:${CLOJURE}:target/jooflux-${JOOFLUX_VERSION}.jar"
+        main = "clojure.main"
+    }
+}
+
+def launch_test(name, main_class){
+    
+    println name
+
+    javaexec{
+        main = main_class
+        classpath = files("-javaagent:target/jooflux-" + JOOFLUX_VERSION + ".jar", "testing/target/jooflux-testing-" + JOOFLUX_VERSION + ".jar")
+    }
+
+}
+                        
+
+def launch_test_with_agent(name,main_class){
+
+    println name + " with JooFlux agent"
+
+    javaexec{
+        jvmArgs '-javaagent:target/jooflux-r2-SNAPSHOT.jar'
+        main = main_class
+        classpath = files("testing/target/jooflux-testing-" + JOOFLUX_VERSION + ".jar")
+    }
+}
+
+def runJRuby(cmdArg) {
+    Thread.currentThread().setContextClassLoader(JRuby.class.classLoader)
+    println "Running JRuby: $cmdArg"
+    JRuby.main("-S $cmdArg".split())
+}
