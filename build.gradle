@@ -257,20 +257,21 @@ task test_fibonacci_aspectj << {
     println "Fibonacci intercepted by AspecJ (before)"
     exec{
         commandLine "ajc", "-cp", "${ASPECTJ_HOME}/lib/aspectjrt.jar:testing/aopplats", "testing/aopplats/FiboForAspectJ.java", "testing/aopplats/BTracer.aj"
-        commandLine "aj", "-cp", "${ASPECTJ_HOME}/lib/aspectjweaver.jar:testing/aopplats FiboForAspectJ"
+        commandLine "aj", "-cp", "${ASPECTJ_HOME}/lib/aspectjweaver.jar:testing/aopplats", "FiboForAspectJ"
     }
 
     println "Fibonacci intercepted by AspecJ (after)"
     exec{
-        commandLine "ajc", "-cp" "${ASPECTJ_HOME}/lib/aspectjrt.jar:testing/aopplats", "testing/aopplats/FiboForAspectJ.java", "testing/aopplats/ATracer.aj"
-        commandLine "aj", "-cp", "${ASPECTJ_HOME}/lib/aspectjweaver.jar:testing/aopplats FiboForAspectJ"
+        commandLine "ajc", "-cp", "${ASPECTJ_HOME}/lib/aspectjrt.jar:testing/aopplats", "testing/aopplats/FiboForAspectJ.java", "testing/aopplats/ATracer.aj"
+        commandLine "aj", "-cp", "${ASPECTJ_HOME}/lib/aspectjweaver.jar:testing/aopplats", "FiboForAspectJ"
     }
 
     println "Fibonacci intercepted by AspecJ (before+after)"
     exec {
-        commandLine "ajc", "-cp", "$#{ASPECTJ_HOME}/lib/aspectjrt.jar:testing/aopplats", "testing/aopplats/FiboForAspectJ.java", "testing/aopplats/ABTracer.aj"
+        commandLine "ajc", "-cp", "${ASPECTJ_HOME}/lib/aspectjrt.jar:testing/aopplats", "testing/aopplats/FiboForAspectJ.java", "testing/aopplats/ABTracer.aj"
         commandLine "aj", "-cp", "${ASPECTJ_HOME}/lib/aspectjweaver.jar:testing/aopplats", "FiboForAspectJ"
     }
+
 }
 
 
