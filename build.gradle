@@ -47,19 +47,19 @@ repositories {
 }
 
 jar {
-    
-	manifest {
+
+    manifest {
 	    	        
-        attributes( 
+        attributes(
             "Specification-Title"   : 'Jooflux',
             "Specification-Version" : JOOFLUX_VERSION,
             "Specification-Vendor"  : "INSA-Lyon",
- 		    "Implementation-Title"  :"JooFlux",
- 		    "Implementation-Version": JOOFLUX_VERSION,
+            "Implementation-Title"  :"JooFlux",
+            "Implementation-Version": JOOFLUX_VERSION,
             "Implementation-Vendor" : "INSA-Lyon",
             "Copyright"             : 'Copyright (c) 2012 INSA-Lyon',
- 		    "License"               : 'Mozilla Public License Version 2.0', 
- 		    "License-URL"           : 'http://www.mozilla.org/MPL/2.0/',
+            "License"               : 'Mozilla Public License Version 2.0',
+            "License-URL"           : 'http://www.mozilla.org/MPL/2.0/',
             "Premain-Class"         : 'fr.insalyon.telecom.jooflux.InvokeInterceptorAgent',
             "Can-Redefine-Classes"  : 'false',
             "Can-Retransform-Classes"       : 'false', 
@@ -71,7 +71,7 @@ jar {
 	doFirst {
 	    
 	    from ASM_LIB + '/META-INF/' exclude 'MANIFEST.MF'
-	    from TINYLOG_LIB + '/META-INF/' exclude 'MANIFEST.MF'
+        from TINYLOG_LIB + '/META-INF/' exclude 'MANIFEST.MF'
         from SCIMARK2_LIB + '/META-INF/' exclude 'MANIFEST.MF'
         from CLOJURE + '/META-INF/' exclude 'MANIFEST.MF'
         from DACAPO_LIB + '/META-INF/' exclude 'MANIFEST.MF'
