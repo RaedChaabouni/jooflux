@@ -67,17 +67,17 @@ jar {
         )
         
 	}
-	
-	doFirst {
-	    
-	    from ASM_LIB + '/META-INF/' exclude 'MANIFEST.MF'
+
+    doFirst {
+
+        from ASM_LIB + '/META-INF/' exclude 'MANIFEST.MF'
         from TINYLOG_LIB + '/META-INF/' exclude 'MANIFEST.MF'
         from SCIMARK2_LIB + '/META-INF/' exclude 'MANIFEST.MF'
         from CLOJURE + '/META-INF/' exclude 'MANIFEST.MF'
         from DACAPO_LIB + '/META-INF/' exclude 'MANIFEST.MF'
 
-	    from (configurations.runtime.resolve().collect { it.isDirectory() ? it : zipTree(it) }) {
-	        exclude 'META-INF/MANIFEST.MF'
+        from (configurations.runtime.resolve().collect { it.isDirectory() ? it : zipTree(it) }) {
+            exclude 'META-INF/MANIFEST.MF'
 	    }
 	
 	}
@@ -118,7 +118,7 @@ dependencies {
     if (!f3.exists()) {
         new URL(DACAPO_URL).withInputStream { i -> f3.withOutputStream { it << i } }
     }
-    //compile files(DACAPO_LIB)
+    compile files(DACAPO_LIB)
 }
 
 project('testing') {
