@@ -17,8 +17,6 @@
 apply plugin: 'java'
 apply plugin: 'maven'
 apply plugin: 'groovy'
-sourceCompatibility = 1.7
-version = '1.0'
 
 ext {
     JOOFLUX_VERSION = 'r2-SNAPSHOT'
@@ -35,6 +33,10 @@ ext {
     DACAPO_URL = 'http://heanet.dl.sourceforge.net/project/dacapobench/9.12-bach/dacapo-9.12-bach.jar'
 }
 
+//libsDirName = ''
+sourceCompatibility = 1.7
+version = "${JOOFLUX_VERSION}"
+
 /* ..................................................................................... #
 # JooFlux
 # ..................................................................................... */
@@ -48,26 +50,6 @@ repositories {
 
 jar {
 
-    manifest {
-	    	        
-        attributes(
-            "Specification-Title"   : 'Jooflux',
-            "Specification-Version" : JOOFLUX_VERSION,
-            "Specification-Vendor"  : "INSA-Lyon",
-            "Implementation-Title"  :"JooFlux",
-            "Implementation-Version": JOOFLUX_VERSION,
-            "Implementation-Vendor" : "INSA-Lyon",
-            "Copyright"             : 'Copyright (c) 2012 INSA-Lyon',
-            "License"               : 'Mozilla Public License Version 2.0',
-            "License-URL"           : 'http://www.mozilla.org/MPL/2.0/',
-            "Premain-Class"         : 'fr.insalyon.telecom.jooflux.InvokeInterceptorAgent',
-            "Can-Redefine-Classes"  : 'false',
-            "Can-Retransform-Classes"       : 'false', 
-            "Can-Set-Native-Method-Prefix"  : 'false'
-        )
-        
-	}
-
     doFirst {
 
         from ASM_LIB + '/META-INF/' exclude 'MANIFEST.MF'
@@ -76,11 +58,33 @@ jar {
         from CLOJURE + '/META-INF/' exclude 'MANIFEST.MF'
         from DACAPO_LIB + '/META-INF/' exclude 'MANIFEST.MF'
 
-        from (configurations.runtime.resolve().collect { it.isDirectory() ? it : zipTree(it) }) {
+        from(configurations.runtime.resolve().collect { it.isDirectory() ? it : zipTree(it) }) {
             exclude 'META-INF/MANIFEST.MF'
-	    }
-	
-	}
+        }
+
+    }
+
+    manifest {
+
+        attributes(
+                "Specification-Title": 'Jooflux',
+                "Specification-Version": JOOFLUX_VERSION,
+                "Specification-Vendor": "INSA-Lyon",
+                "Implementation-Title": "JooFlux",
+                "Implementation-Version": JOOFLUX_VERSION,
+                "Implementation-Vendor": "INSA-Lyon",
+                "Copyright": 'Copyright (c) 2012 INSA-Lyon',
+                "License": 'Mozilla Public License Version 2.0',
+                "License-URL": 'http://www.mozilla.org/MPL/2.0/',
+                "Premain-Class": 'fr.insalyon.telecom.jooflux.InvokeInterceptorAgent',
+                "Can-Redefine-Classes": 'false',
+                "Can-Retransform-Classes": 'false',
+                "Can-Set-Native-Method-Prefix": 'false'
+        )
+
+    }
+
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
 }
 
 sourceSets {
@@ -178,7 +182,7 @@ task test_scimark2 << {
 
     println "SciMark 2.0 with JooFlux agent"
     javaexec {
-        jvmArgs '-noverify', LOGGING_FLAG, "javaagent:target/jooflux-${JOOFLUX_VERSION}.jar"
+        jvmArgs '-noverify', LOGGING_FLAG, "javaagent:target/libs/jooflux-${JOOFLUX_VERSION}.jar"
         main = 'jnt.scimark2.commandline'
         classpath = files("${ASM_LIB}:${SCIMARK2_LIB}")
     }
@@ -199,7 +203,7 @@ task test_scimark2_large << {
 
     println "SciMark 2.0 Large with JooFlux agent"
     javaexec {
-        jvmArgs '-noverify', '${LOGGING_FLAG}', '-javaagent:target/jooflux-${JOOFLUX_VERSION}.jar', '-cp'
+        jvmArgs '-noverify', '${LOGGING_FLAG}', '-javaagent:target/libs/jooflux-${JOOFLUX_VERSION}.jar', '-cp'
         main = 'jnt.scimark2.commandline'
         classpath = files(SCIMARK2_LIB)
         args '-large'
@@ -220,10 +224,10 @@ task test_dacapo << {
 
     println "Dacapo with JooFlux agent"
     exec {
-        commandLine "java", "-noverify", "-Dtinylog.level=ERROR", "-javaagent:target/jooflux-${JOOFLUX_VERSION}.jar", "-cp", "${ASM_LIB}", "-jar", "${DACAPO_LIB}", "-C", "luindex"
-        commandLine "java", "-noverify", "-Dtinylog.level=ERROR", "-javaagent:target/jooflux-${JOOFLUX_VERSION}.jar", "-cp", "${ASM_LIB}", "-jar", "${DACAPO_LIB}", "-C", "lusearch"
-        commandLine "java", "-noverify", "-Dtinylog.level=ERROR", "-javaagent:target/jooflux-${JOOFLUX_VERSION}.jar", "-cp", "${ASM_LIB}", "-jar", "${DACAPO_LIB}", "-C", "sunflow"
-        commandLine "java", "-noverify", "-Dtinylog.level=ERROR", "-javaagent:target/jooflux-${JOOFLUX_VERSION}.jar", "-cp", "${ASM_LIB}", "-jar", "${DACAPO_LIB}", "-C", "avrora"
+        commandLine "java", "-noverify", "-Dtinylog.level=ERROR", "-javaagent:target/libs/jooflux-${JOOFLUX_VERSION}.jar", "-cp", "${ASM_LIB}", "-jar", "${DACAPO_LIB}", "-C", "luindex"
+        commandLine "java", "-noverify", "-Dtinylog.level=ERROR", "-javaagent:target/libs/jooflux-${JOOFLUX_VERSION}.jar", "-cp", "${ASM_LIB}", "-jar", "${DACAPO_LIB}", "-C", "lusearch"
+        commandLine "java", "-noverify", "-Dtinylog.level=ERROR", "-javaagent:target/libs/jooflux-${JOOFLUX_VERSION}.jar", "-cp", "${ASM_LIB}", "-jar", "${DACAPO_LIB}", "-C", "sunflow"
+        commandLine "java", "-noverify", "-Dtinylog.level=ERROR", "-javaagent:target/libs/jooflux-${JOOFLUX_VERSION}.jar", "-cp", "${ASM_LIB}", "-jar", "${DACAPO_LIB}", "-C", "avrora"
     }
 }
 
@@ -310,7 +314,7 @@ task test_fibonacci_clojure << {
 
     println "Fibonacci on Clojure instrumented by JooFlux"
     javaexec {
-        jvmArgs "-noverify", "${LOGGING_FLAG}", "-javaagent:target/jooflux-${JOOFLUX_VERSION}.jar", "-Dtinylog.level=WARNING", "-Xbootclasspath/a:${CLOJURE}:target/jooflux-${JOOFLUX_VERSION}.jar"
+        jvmArgs "-noverify", "${LOGGING_FLAG}", "-javaagent:target/libs/jooflux-${JOOFLUX_VERSION}.jar", "-Dtinylog.level=WARNING", "-Xbootclasspath/a:${CLOJURE}:target/libs/jooflux-${JOOFLUX_VERSION}.jar"
         main = "clojure.main"
         classpath = files("testing/dynlangs/fibo.clj")
     }
@@ -359,7 +363,7 @@ task test_fibonacci_javascript << {
 task test_clj << {
     println "Clojure instrumented by JooFlux"
     exec {
-        commandLine "java", "-noverify", LOGGING_FLAG, "-javaagent:target/jooflux-${JOOFLUX_VERSION}.jar", "-Dtinylog.level=WARNING", "-Xbootclasspath/a:${CLOJURE}:target/jooflux-${JOOFLUX_VERSION}.jar", "clojure.main"
+        commandLine "java", "-noverify", LOGGING_FLAG, "-javaagent:target/libs/jooflux-${JOOFLUX_VERSION}.jar", "-Dtinylog.level=WARNING", "-Xbootclasspath/a:${CLOJURE}:target/libs/jooflux-${JOOFLUX_VERSION}.jar", "clojure.main"
     }
 }
 
@@ -368,8 +372,8 @@ def launch_test(name, main_class) {
     println name
 
     javaexec {
-        jvmArgs "-javaagent:target/jooflux-" + JOOFLUX_VERSION + ".jar"
-        classpath = files("testing/target/jooflux-testing-" + JOOFLUX_VERSION + ".jar")
+        jvmArgs "-javaagent:target/libs/jooflux-" + JOOFLUX_VERSION + ".jar"
+        classpath = files("testing/target/libs/jooflux-testing-" + JOOFLUX_VERSION + ".jar")
         main = main_class
     }
 
@@ -381,8 +385,8 @@ def launch_test_with_agent(name,main_class) {
     println name + " with JooFlux agent"
 
     javaexec {
-        jvmArgs "-javaagent:target/jooflux-" + JOOFLUX_VERSION + ".jar"
+        jvmArgs "-javaagent:target/libs/jooflux-" + JOOFLUX_VERSION + ".jar"
         main = main_class
-        classpath = files("testing/target/jooflux-testing-" + JOOFLUX_VERSION + ".jar")
+        classpath = files("testing/target/libs/jooflux-testing-" + JOOFLUX_VERSION + ".jar")
     }
 }
